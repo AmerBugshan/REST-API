@@ -1,22 +1,38 @@
 import http from "node:http";
-
+import { getDataFromDB } from "./Database/db.js";
 
 const PORT = 8000;
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
+  const destinations = await getDataFromDB()
 
-    if (req.url === "/api" && req.method === "GET") {
-        res.write("Request URL: " + req.url + "\n");
-        res.write("Request Method: " + req.method + "\n");
-        res.end("Hello From The Server!", () =>
-            console.log("A Connection Has Been Closed.")
-        );
-    } else {
-        res.end("Sorry, Bad Request", () =>
-            console.log("A Bad Connection Has Been Closed.")
-        );
-    }
-});
+  if (req.url === '/api' && req.method === 'GET') {
 
+    res.setHeader('Content-Type', 'application/json')
+    res.statusCode = 200
+    res.end(JSON.stringify(destinations))
 
-server.listen(PORT, () => console.log(`Server running on port: ${PORT}`));
+  } else if (req.url.startsWith('/api/continent') && req.method === 'GET') {
+
+    const continent = req.url.split('/').pop()
+    const filteredData = destinations.filter((destination) => {
+      return destination.continent.toLowerCase() === continent.toLowerCase()
+    })
+    res.setHeader('Content-Type', 'application/json')
+    res.statusCode = 200
+    res.end(JSON.stringify(filteredData))
+
+  } else {
+
+    res.setHeader('Content-Type', 'application/json')
+    res.statusCode = 404
+    res.end(JSON.stringify({
+      error: "not found",
+      message: "The requested route does not exist"
+    })
+    )
+  }
+  
+})
+
+server.listen(PORT, () => console.log(`Connected on port: ${PORT}`))
